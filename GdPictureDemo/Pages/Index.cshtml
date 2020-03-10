@@ -1,0 +1,63 @@
+﻿@page
+@using GdPicture14.WEB
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div id="application_container">
+    <div>
+        <button type="button" onclick="signPdf();">Sign</button>
+    </div>
+    <div id="viewer_container" style="height: 500px;">
+        @{
+            using (DocuViewareControl docuVieware = new DocuViewareControl(Model.SessionId, "DocuVieware", 30)
+            {
+                EnableFormFieldsEdition = true,
+                MaxUploadSize = 52428800
+            })
+            {
+                docuVieware.LoadFromFile(Model.DocumentPath);
+                docuVieware.RenderControl(Output);
+            }
+        }
+    </div>
+</div>
+
+<script>
+    function signPdf() {
+        DocuViewareAPI.PostCustomServerAction('DocuVieware', true, "SignPdf", {}, function (result) {
+            savePdfFile("signed.pdf", base64ToPdfBlob(result));
+        });
+    }
+
+    function base64ToPdfBlob(base64) {
+        var sliceSize = 1024;
+        var byteChars = window.atob(base64);
+        var len = byteChars.length;
+        var offset = 0;
+        var byteArrays = [];
+        for (offset; offset < len; offset += sliceSize) {
+            var slice = byteChars.slice(offset, offset + sliceSize);
+            var byteNumbers = new Array(slice.length);
+            var i = 0;
+            for (i; i < slice.length; i += 1) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            var byteArray = new Uint8Array(byteNumbers);
+            byteArrays.push(byteArray);
+        }
+        return new Blob(byteArrays, { type: "application/pdf" });
+    }
+
+    function savePdfFile(name, data) {
+        if (data != null && navigator.msSaveBlob) {
+            return navigator.msSaveBlob(new Blob([data], { type: "data:attachment/pdf" }), name);
+        }
+        var url = window.URL.createObjectURL(new Blob([data], { type: "data:attachment/pdf" }));
+        var tempLink = $("<a download='" + name + "' href='" + url + "'></a>");
+        tempLink.appendTo('body');
+        tempLink[0].click();
+        tempLink.remove();
+    }
+</script>
