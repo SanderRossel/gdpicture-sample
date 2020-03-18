@@ -61,8 +61,8 @@ namespace GdPictureDemo
                 var handler = app.ApplicationServices.GetService<DocuViewareCustomActionsHandler>();
                 switch (e.actionName)
                 {
-                    case "SignPdf":
-                        handler.HandleSignPdf(e);
+                    case "SetStar":
+                        handler.SetStar(e);
                         break;
                     default:
                         throw new NotImplementedException();

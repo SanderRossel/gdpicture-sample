@@ -6,18 +6,30 @@
 }
 
 <div id="application_container">
-    <div>
-        <button type="button" onclick="signPdf();">Sign</button>
-    </div>
     <div id="viewer_container" style="height: 500px;">
         @{
             using (DocuViewareControl docuVieware = new DocuViewareControl(Model.SessionId, "DocuVieware", 30)
             {
+                AnnotationEditorMode = false,
+                EnableFileUploadButton = false,
                 EnableFormFieldsEdition = true,
-                MaxUploadSize = 52428800
+                EnableLoadFromUriButton = false,
+                EnableTwainAcquisitionButton = false,
+                MaxUploadSize = 52428800,
+                ShowRedactionSnapIn = false
             })
             {
                 docuVieware.LoadFromFile(Model.DocumentPath);
+
+                string svg = "<svg viewBox=\"0 0 512 512\" width=\"100%\" height=\"100%\"><g>" +
+                    "<path xmlns=\"http://www.w3.org/2000/svg\" " +
+                    "stroke=\"#000\" " +
+                    "d=\"m12.39251,155.673918l186.018769,0l57.481231,-143.619617l57.481264,143.619617l186.018736,0l-150.49207,88.760789l57.484205,143.619617l-150.492135,-88.763206l-150.492103,88.763206l57.484222,-143.619617l-150.492119,-88.760789z\" " +
+                    "stroke-width=\"22.5\" " +
+                    "fill=\"#fff\"/></g></svg>";
+                string img = "<img src=\"/Images/star.jpg\" style=\"width: 100%;\" />";
+                docuVieware.AddCustomSnapIn("mySnapIn", "Set star", svg, "<button type=\"button\" onclick=\"setStar();\">Set star</button>", true, "");
+
                 docuVieware.RenderControl(Output);
             }
         }
@@ -25,39 +37,9 @@
 </div>
 
 <script>
-    function signPdf() {
-        DocuViewareAPI.PostCustomServerAction('DocuVieware', true, "SignPdf", {}, function (result) {
-            savePdfFile("signed.pdf", base64ToPdfBlob(result));
+    function setStar() {
+        DocuViewareAPI.PostCustomServerAction('DocuVieware', true, "SetStar", {}, function (result) {
+            // Possibly handle results here, or omit parameter if unnecessary.
         });
-    }
-
-    function base64ToPdfBlob(base64) {
-        var sliceSize = 1024;
-        var byteChars = window.atob(base64);
-        var len = byteChars.length;
-        var offset = 0;
-        var byteArrays = [];
-        for (offset; offset < len; offset += sliceSize) {
-            var slice = byteChars.slice(offset, offset + sliceSize);
-            var byteNumbers = new Array(slice.length);
-            var i = 0;
-            for (i; i < slice.length; i += 1) {
-                byteNumbers[i] = slice.charCodeAt(i);
-            }
-            var byteArray = new Uint8Array(byteNumbers);
-            byteArrays.push(byteArray);
-        }
-        return new Blob(byteArrays, { type: "application/pdf" });
-    }
-
-    function savePdfFile(name, data) {
-        if (data != null && navigator.msSaveBlob) {
-            return navigator.msSaveBlob(new Blob([data], { type: "data:attachment/pdf" }), name);
-        }
-        var url = window.URL.createObjectURL(new Blob([data], { type: "data:attachment/pdf" }));
-        var tempLink = $("<a download='" + name + "' href='" + url + "'></a>");
-        tempLink.appendTo('body');
-        tempLink[0].click();
-        tempLink.remove();
     }
 </script>
